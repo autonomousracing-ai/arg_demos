@@ -36,4 +36,4 @@ source ~/ros/arg_ws/devel/setup.bash
 roslaunch arg_demos arg_demo_lidar_distortion.launch
 ```
 
-start with space the rosbag
+start with space the rosbag in Terminal 2

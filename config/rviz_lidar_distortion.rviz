@@ -5,7 +5,6 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /Status1
-        - /System1
       Splitter Ratio: 0.5
     Tree Height: 715
   - Class: rviz/Selection
@@ -198,7 +197,7 @@ Visualization Manager:
               Show Axes: false
               Show Trail: false
           Name: RobotModel
-          Robot Description: robot_description
+          Robot Description: /devbot/robot_description
           TF Prefix: ""
           Update Interval: 0
           Value: true
