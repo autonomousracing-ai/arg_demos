@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<launch>
+
+
+  <group ns="devbot">
+
+    <!-- DevBot model -->
+    <include file="$(find arg_devbot_description)/launch/DevBot2.launch" />
+  
+    <!-- Lidar Distortion Correction -->
+    <include file="$(find arg_lidar_distortion_correction)/launch/arg_lidar_distortion_correction.launch" />
+
+  </group>
+
+
+
+  <!-- RVIZ  -->
+  <node pkg="rviz" type="rviz" name="rviz_arg" respawn="true" output="screen" args="-d $(find arg_demos)/config/rviz_lidar_distortion.rviz" />
+
+
+</launch>
