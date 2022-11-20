@@ -1,0 +1,134 @@
+<?xml version="1.0"?>
+<launch>
+
+<!-- change topic in rosbag -->
+<node pkg="topic_tools" type="relay" name="relay_pose" args="/devbot/pose /gps_local/pose" />
+
+  <!-- general configuration parameters -->
+  <arg name="lidar_localization" default="true"/>                             <!-- true: lidar for localization, false: gps_local/pose for localization -->
+  <arg name="map_path" default="$(find arg_data_croix_en_ternois)" />
+  <arg name="pcd_activated" default="true" />
+
+
+  <!-- DevBot2.0 -->
+  <group ns="devbot">
+    <!-- DevBot description -->
+    <include file="$(find arg_devbot_description)/launch/DevBot2.launch" />
+  
+  </group>
+
+  <!-- localization module -->
+  <group ns="localization">
+    <!-- pose_twist_fusion_filter module -->
+    <group ns="pose_twist_fusion_filter">
+      <include file="$(find ekf_localizer)/launch/ekf_localizer.launch" >
+
+        <!-- for Pose measurement -->
+        <arg name="input_pose_name" value="/localization/pose_estimator/pose"/>        <!-- possibilities: /not_used     /localization/pose_estimator/pose -->
+        <arg name="pose_rate" value="20.0"/>
+        <arg name="pose_stddev_x" value="1.025"/>
+        <arg name="pose_stddev_y" value="1.025"/>
+        <arg name="pose_stddev_yaw" value="0.25"/>
+
+        <!-- for twist measurement -->
+        <arg name="input_twist_name" value="/devbot/twist"/>            <!-- possibilities: /not_used     /devbot/twist -->
+        <arg name="twist_rate" value="200.0"/>
+        <arg name="twist_stddev_vx" value="0.1"/>
+        <arg name="twist_stddev_wz" value="0.1"/>
+      </include>
+    </group>
+  </group>  
+
+  <!-- Pointcloud loader -->
+  <group ns="map">
+    <node if="$(eval pcd_activated)" pkg="map_loader" type="pointcloud_map_loader" name="pointcloud_map_loader" args="$(arg map_path)/pcd/pointcloud_map.pcd" >
+      <remap from="~output/pointcloud_map" to="/map/pointcloud_map" />
+    </node>
+  </group>
+
+  <!-- Option 1: GPS based localization -->
+  <group unless="$(arg lidar_localization)" >
+  
+    <!-- add a noise to the gps ground truth -->
+    <include file="$(find arg_localization)/launch/gps_pose_estimator.launch">
+      <arg name="pose_stddev_x_y" value="1.0" />
+      <arg name="pose_mu_x_y" value="0.0" />
+      <arg name="pose_stddev_yaw" value="0.0" />
+      <arg name="pose_mu_yaw" value="0.01" />
+    </include>
+
+  </group>
+  
+  
+  
+  
+  <!-- Option 2: Lidar based localization  -->
+  <group if="$(arg lidar_localization)" >
+
+    <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
+    <node pkg="pointcloud_preprocessor" type="voxel_grid_downsample_filter_node" name="voxel_grid_filter" output="log">
+
+      <remap from="~input" to="/sensing/lidar/top/points" />
+      <remap from="~output" to="/localization/downsample/pointcloud" />
+      <rosparam>
+                voxel_size_x: 2.0
+                voxel_size_y: 2.0
+                voxel_size_z: 2.0
+      </rosparam>
+    </node>  
+
+    <!-- localization module -->
+    <group ns="localization">
+    
+      <!-- pose_estimator module -->
+      <group ns="pose_estimator">
+
+        <include file="$(find arg_localization)/launch/lidar_pose_estimator.launch">
+          <arg name="publish_tf" value="false"/>
+        </include>
+      </group>
+
+      <!-- Publish TF map -> base_link -->  
+      <include file="$(find arg_localization)/launch/map_base_link_tf_broadcaster.launch">
+        <arg name="topic_name" value="/localization/pose_estimator/pose"/>
+      </include>  
+
+    </group>
+  
+  </group>  
+  
+
+
+
+
+  <!-- RVIZ  -->
+  <node pkg="rviz" type="rviz" name="rviz_arg" respawn="true" output="log" args="-d $(find arg_demos)/config/rviz_lidar_localization.rviz" />
+
+
+  <!-- Set start position based on GPS data -->
+  <include file="$(find arg_localization)/launch/init_position.launch">
+    <arg name="set_initial_pose_manually" value="False"/>
+  </include>
+
+
+  <!-- Publish odom topic for (gps_pose, localization_pose and ekf_pose -->
+  <node pkg="arg_localization" type="odom_publisher.py" name="odom_publisher_gps" output="log" respawn="true">
+    <param name="input_pose" value="/gps_local/pose"/>
+    <param name="output_odom" value="/gps_local/odom"/>
+  </node>
+
+  <node pkg="arg_localization" type="odom_publisher.py" name="odom_publisher_localization" output="log" respawn="true">
+    <param name="input_pose" value="/localization/pose_estimator/pose"/>
+    <param name="output_odom" value="/localization/pose_estimator/odom"/>
+  </node>
+
+  <node pkg="arg_localization" type="odom_publisher.py" name="odom_publisher_ekf" output="log" respawn="true">
+    <param name="input_pose" value="/localization/pose_twist_fusion_filter/pose"/>
+    <param name="output_odom" value="/localization/pose_twist_fusion_filter/odom"/>
+  </node>
+
+
+
+
+    
+</launch>

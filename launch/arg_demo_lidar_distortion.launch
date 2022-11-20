@@ -13,7 +13,6 @@
   </group>
 
 
-
   <!-- RVIZ  -->
   <node pkg="rviz" type="rviz" name="rviz_arg" respawn="true" output="screen" args="-d $(find arg_demos)/config/rviz_lidar_distortion.rviz" />
 
