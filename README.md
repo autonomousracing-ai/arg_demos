@@ -7,6 +7,7 @@ git clone https://github.com/autonomousracing-ai/arg_demos ~/ros/arg_ws/src/arg_
 git clone https://github.com/autonomousracing-ai/arg_devbot_description ~/ros/arg_ws/src/arg_devbot_description
 git clone https://github.com/autonomousracing-ai/arg_lidar_distortion_correction ~/ros/arg_ws/src/arg_lidar_distortion_correction
 git clone https://github.com/autonomousracing-ai/arg_data_croix_en_ternois ~/ros/arg_ws/src/arg_data_croix_en_ternois
+git clone https://github.com/autonomousracing-ai/arg_localization ~/ros/arg_ws/src/arg_localization 
 
 cd ~/ros/arg_ws/src/arg_data_croix_en_ternois/bagfile
 tar -xvf devbot_lap0.tar.xz
